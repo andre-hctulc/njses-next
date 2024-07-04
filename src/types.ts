@@ -9,7 +9,7 @@ declare module "../../njses-http" {
 }
 
 declare module "../../njses" {
-    interface ServiceShadow {
+    interface CustomShadow {
         /** `<actionName, methodName>` */
         nextjsActions: Record<string, string>;
     }
