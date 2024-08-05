@@ -13,7 +13,7 @@ import {
     MethodReturnType,
     Module,
     ServiceInstance,
-    Registery,
+    Services,
     Shadow,
 } from "../../njses";
 import { NEXT_FIELD, NEXT_ROLE } from "./const";
@@ -50,33 +50,35 @@ export class NextModule {
         params: MethodParams<S, M>
     ): Promise<Awaited<MethodReturnType<S, M>>> {
         const shadow = Shadow.get(actionService);
-        const actionField = shadow?.nextjsActions?.[actionName];
+        const actionField = shadow?.$nextjsActions?.[actionName];
 
         if (!actionField) throw new Error(`Action ${actionName} not found`);
 
         let session: NextActionSession | null = null;
 
-        for (const service of Registery.getAssignees(NEXT_ROLE.SERVICE)) {
+        for (const service of Services.getAssignees(NEXT_ROLE.SERVICE)) {
             const methods = Shadow.getMethods(service, NEXT_FIELD.SESSION_PROVIDER);
 
             for (const method of methods) {
                 const field = Shadow.getField(service, method);
 
-                if (!this.matches(actionName, field?.nextjsActionMatcher)) continue;
+                if (!this.matches(actionName, field?.$nextjsActionMatcher)) continue;
 
-                session = await Registery.invoke<ActionSessionProvider>(service, method, [
+                session = await Services.invoke<ActionSessionProvider>(
+                    service,
+                    method,
                     actionService,
                     params,
-                    session,
-                ]);
+                    session
+                );
             }
         }
 
-        const result = await Registery.invoke(
+        const result = await Services.invoke(
             actionService as ServiceInstance,
             actionField,
             Shadow.mapArgs(actionService, actionField, params, (arg, param) => {
-                if (param?.nextjsActionSession) return session;
+                if (param?.$nextjsActionSession) return session;
                 return arg;
             })
         );
@@ -85,11 +87,11 @@ export class NextModule {
     }
 
     getAssignees(actionName: string) {
-        return Registery.getAssignees(NEXT_ROLE.SERVICE).filter((service) => {
+        return Services.getAssignees(NEXT_ROLE.SERVICE).filter((service) => {
             const shadow = Shadow.get(service);
             console.log("######### Shadow", shadow);
             // apply matcher
-            return this.matches(actionName, shadow?.nextjsActionMatcher);
+            return this.matches(actionName, shadow?.$nextjsActionMatcher);
         });
     }
 

@@ -12,8 +12,8 @@ import type { ActionMatcherCheck, NextActionSession } from "./types";
 export function Action(actionName: string) {
     return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
         Shadow.update(target, (shadow) => {
-            if (!shadow.nextjsActions) shadow.nextjsActions = {};
-            shadow.nextjsActions[actionName] = propertyKey;
+            if (!shadow.$nextjsActions) shadow.$nextjsActions = {};
+            shadow.$nextjsActions[actionName] = propertyKey;
         });
         // Always flush, as here are commonly are (should) parameter validators applied
         Flush()(target, propertyKey, descriptor);
@@ -47,7 +47,7 @@ export function ActionSessionProvider<A extends ActionSessionProvider>(
  * @param_decorator
  */
 export function ActionSession(target: any, propertyKey: string, paramIndex: number) {
-    Shadow.addParam(target, propertyKey, paramIndex, { nextjsActionSession: true });
+    Shadow.addParam(target, propertyKey, paramIndex, { $nextjsActionSession: true });
 }
 
 /**
@@ -66,10 +66,10 @@ export function Next(target: ServiceCtr) {
 export function ActionMatcher(matcher: ActionMatcherCheck) {
     return function (service: any, propertyKey?: string, descriptor?: PropertyDescriptor) {
         if (descriptor) {
-            Shadow.addField(service, propertyKey as string, { nextjsActionMatcher: matcher });
+            Shadow.addField(service, propertyKey as string, { $nextjsActionMatcher: matcher });
         } else
             Shadow.update(service, (shadow) => {
-                shadow.nextjsActionMatcher = matcher;
+                shadow.$nextjsActionMatcher = matcher;
             });
     };
 }
