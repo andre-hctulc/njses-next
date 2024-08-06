@@ -13,7 +13,7 @@ declare module "../../njses-http" {
 }
 
 declare module "../../njses" {
-    interface CustomShadow {
+    interface CustomShadowContext {
         /** `<actionName, methodName>` */
         nextjsActions: Record<string, string>;
         nextjsActionMatcher: ActionMatcherCheck;

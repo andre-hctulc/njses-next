@@ -1,12 +1,11 @@
-import { ServiceCtr, ServiceInstance, Shadow, inject } from "../../njses";
+import { Instance, ServiceCtr, inject } from "../../njses";
 import { NextModule } from "./module";
 import { NextRouteHandler } from "./types";
 import { HTTPModule, HTTPRequest } from "../../njses-http";
 
-export function routeHandler(routeService: ServiceInstance): NextRouteHandler {
+export function routeHandler(routeService: Instance): NextRouteHandler {
     // trigger mounts immeadiately (Note this function cannot be async)
     inject(HTTPModule);
-    if (!Shadow.isDynamic(routeService)) inject(routeService);
 
     return async (request, params) => {
         const http = await inject(HTTPModule);

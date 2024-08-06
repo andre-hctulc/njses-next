@@ -1,5 +1,4 @@
-import { ServiceCtr, Flush, Role, ServiceInstance } from "../../njses";
-import { Shadow } from "../../njses/src/shadow";
+import { ServiceCtr, Flush, Role, Instance, Shadow } from "../../njses";
 import { NEXT_FIELD, NEXT_ROLE } from "./const";
 import type { ActionMatcherCheck, NextActionSession } from "./types";
 
@@ -11,10 +10,9 @@ import type { ActionMatcherCheck, NextActionSession } from "./types";
  */
 export function Action(actionName: string) {
     return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
-        Shadow.update(target, (shadow) => {
-            if (!shadow.$nextjsActions) shadow.$nextjsActions = {};
-            shadow.$nextjsActions[actionName] = propertyKey;
-        });
+        const shadow = Shadow.require(target);
+        const ctx = shadow.getCtx("$nextjsActions");
+        shadow.setCtx("$nextjsActions", { ...ctx, [actionName]: propertyKey });
         // Always flush, as here are commonly are (should) parameter validators applied
         Flush()(target, propertyKey, descriptor);
     };
@@ -24,7 +22,7 @@ export function Action(actionName: string) {
  * This should throw an error on unsuccessful authentication
  */
 export type ActionSessionProvider = (
-    actionHandler: ServiceInstance,
+    actionHandler: Instance,
     params: any[],
     currentSession: NextActionSession | null
 ) => NextActionSession | Promise<NextActionSession>;
@@ -40,14 +38,14 @@ export function ActionSessionProvider<A extends ActionSessionProvider>(
     propertyKey: string,
     descriptor: PropertyDescriptor
 ) {
-    Shadow.addMethod(target, NEXT_FIELD.SESSION_PROVIDER, propertyKey);
+    Shadow.require(target).addMethod(NEXT_FIELD.SESSION_PROVIDER, propertyKey);
 }
 
 /**
  * @param_decorator
  */
 export function ActionSession(target: any, propertyKey: string, paramIndex: number) {
-    Shadow.addParam(target, propertyKey, paramIndex, { $nextjsActionSession: true });
+    Shadow.require(target).addParam(propertyKey, paramIndex, { $nextjsActionSession: true });
 }
 
 /**
@@ -65,11 +63,12 @@ export function Next(target: ServiceCtr) {
  */
 export function ActionMatcher(matcher: ActionMatcherCheck) {
     return function (service: any, propertyKey?: string, descriptor?: PropertyDescriptor) {
+        const shadow = Shadow.require(service);
+
         if (descriptor) {
-            Shadow.addField(service, propertyKey as string, { $nextjsActionMatcher: matcher });
-        } else
-            Shadow.update(service, (shadow) => {
-                shadow.$nextjsActionMatcher = matcher;
-            });
+            shadow.addField(propertyKey as string, { $nextjsActionMatcher: matcher });
+        } else {
+            shadow.setCtx("$nextjsActionMatcher", matcher);
+        }
     };
 }
